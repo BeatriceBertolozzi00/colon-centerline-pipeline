@@ -178,6 +178,11 @@ Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 
 <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/d4652415-a256-4b36-9aad-500e7ba91f7b" />
 
 
+### 3) Distance transform di cl_nav
+
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/dfab3000-e736-475a-b6c5-784ed444837c" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c0b58c64-61eb-43fe-b176-1132f827282b" />
+
 
 ### 4) cl_row + colon
 
