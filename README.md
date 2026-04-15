@@ -13,7 +13,7 @@ Questo repository contiene una pipeline in MATLAB, sviluppata in due parti, per:
 
 
 Il workflow combina:
-- **3D Slicer** per il preprocessing geometrico e la generazione degli input volumetrici
+- **3D Slicer** per il preprocessing e la generazione degli input volumetrici
 - **MATLAB** per la ricostruzione del lume, il calcolo della centerline, la validazione quantitativa e la registrazione finale sullo STL originale
 
 
