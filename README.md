@@ -62,7 +62,7 @@ Da Slicer sono stati esportati tre volumi:
 
 ## MATLAB
 
-La pipeline in matlab è composta da due parti_.
+La pipeline in matlab è composta da due parti:
 
 ### Parte 1 — Ricostruzione della centerline
 
@@ -88,10 +88,16 @@ Script:
 11. costruzione della centerline grezza
 12. smoothing e ricampionamento uniforme
 13. generazione di una traiettoria ulteriormente regolarizzata per navigazione
-14. validazione quantitativa della traiettoria
+14. validazione quantitativa delle traiettorie
 
 #### Output principale
 - `centerline_from_caps.mat`
+
+## Tipi di centerline calcolati
+
+- `cl_raw`: centerline grezza estratta dal path sullo skeleton
+- `cl_resampled`: centerline smussata e ricampionata uniformemente
+- `cl_nav`: traiettoria regolarizzata finale per navigazione
 
 
 ---
@@ -144,12 +150,15 @@ Ho trovato che la configurazione migliore è risultata essere :
 - `flip = [-1 1 1]`
 
 Ho quindi fissato questa configurazione direttamente nello script finale.
-## Devo sicuramente migliorare i 3 volumi su slicer3D !!!!
+
+2)  
+## Devo sicuramente migliorare i 3 volumi su slicer3D (soprattutto i CAP!!!!)
 
 ---
 
 
 ## Risultati grafici
+In 'docs/images' sono riportate le immagini visualizzabili in 3D in formato .fig.
 
 ### 1) Diagnostica degli anchor
 Visualizzazione dei due cap, dei centroidi con normali associate e degli anchor interni selezionati come estremi della centerline.
@@ -180,9 +189,25 @@ Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/4bd8791d-bc2f-4f79-a91d-7ad2025b5c3f" />
 
 
-### 4) cl_navigata + colon
+### 5) cl_nav + colon
 
 
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/c1477720-baf4-424a-a3ec-fa8fccd90ac7" />
+
+### 6) Overlay Mesh
+Confronto visivo tra STL originale e mesh segmentata registrata; l’allineamento finale è valutato con l’RMSE ICP.
+
+
+
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/405fda01-b239-4227-8d02-74570ccd0d87" />
+
+
+### 6) STL + Centerline registrata
+Visualizzazione della traiettoria cl_stl allineata al modello originale, coerente con la registrazione valutata tramite RMSE ICP.
+
+
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/df2901fb-2949-4a9b-a993-49c6faf1753b" />
+
+
 
 
