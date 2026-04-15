@@ -1,1 +1,44 @@
+Caricato file intermedio: OUTPUT_CENTERLINE\centerline_from_caps.mat
 
+================ REGISTRAZIONE STL ===================
+Mesh segmentazione estratta: 611582 vertici | 1223096 facce
+Trasformazione NIfTI applicata a mesh segmentazione e centerline.
+STL originale: 372421 vertici | 744842 facce
+
+--- Bounds prima della registrazione ---
+SEGMENTAZIONE(mm) bounds:
+  X=[-82.48 -8.99]
+  Y=[-288.03 -133.53]
+  Z=[-255.42 -112.22]
+CENTERLINE(mm) bounds:
+  X=[-61.78 -35.14]
+  Y=[-265.80 -158.78]
+  Z=[-233.64 -133.65]
+STL originale bounds:
+  X=[-71.59 83.18]
+  Y=[215.15 288.74]
+  Z=[-256.12 -112.73]
+
+Uso permutazione e flip fissati + ICP...
+Permutazione fissata: [2 3 1]
+Flip fissato:         [-1 1 1]
+RMSE ICP finale = 1.3497 mm
+
+--- Bounds dopo la registrazione ---
+SEGMENTAZIONE registrata bounds:
+  X=[-71.56 82.94]
+  Y=[215.02 288.51]
+  Z=[-255.89 -112.69]
+CENTERLINE registrata bounds:
+  X=[-46.30 60.71]
+  Y=[241.17 267.81]
+  Z=[-234.11 -134.12]
+STL originale bounds:
+  X=[-71.59 83.18]
+  Y=[215.15 288.74]
+  Z=[-256.12 -112.73]
+Salvato: OUTPUT_REGISTRATION\colon_registered.stl
+Salvato: OUTPUT_REGISTRATION\centerline_tube_thin.stl
+
+Salvato: OUTPUT_REGISTRATION\centerline_caps_final_registered.mat
+Parte 2 completata.
