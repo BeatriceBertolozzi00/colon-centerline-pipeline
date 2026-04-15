@@ -14,7 +14,7 @@ Questo repository contiene una pipeline in MATLAB, sviluppata in due parti, per:
 
 Il workflow combina:
 - **3D Slicer** per il preprocessing e la generazione degli input volumetrici
-- **MATLAB** per la ricostruzione del lume, il calcolo della centerline, la validazione quantitativa e la registrazione finale sullo STL originale
+- **MATLAB** per la ricostruzione del lume, il calcolo della centerline, la validazione e la registrazione finale sullo STL originale
 
 
 ## 3D Slicer
@@ -24,7 +24,7 @@ In 3D Slicer ho eseguito tre operazioni PRINCIPALI:
 
 ### 1. Costruzione di una rappresentazione volumetrica del colon
 
-Si è passati da una mesh superficiale a una segmentazione voxelizzata del colon, cioè a una rappresentazione 3D discreta in cui ogni voxel appartiene oppure no alla struttura.
+Si è passati da una mesh superficiale a una segmentazione voxelizzata del colon
 
 ### 2. Definizione di una shell chiusa del colon
 
@@ -163,6 +163,8 @@ In 'docs/images' sono riportate le immagini visualizzabili in 3D in formato .fig
 ### 1) Diagnostica degli anchor
 Visualizzazione dei due cap, dei centroidi con normali associate e degli anchor interni selezionati come estremi della centerline.
 <img width="371" height="311" alt="image" src="https://github.com/user-attachments/assets/c9358b18-fca0-4cab-af55-1d5f6264b609" />
+
+
 ### 2) Distance transform di cl_raw
 Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 3D evidenzia la centerline grezza colorata in base alla sua centralità nel lume (più D è maggiore meglio più il punto corrispondente è centrale)
 
@@ -178,28 +180,28 @@ Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 
 <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/d4652415-a256-4b36-9aad-500e7ba91f7b" />
 
 
-### 3) Distance transform di cl_nav
+### 4) Distance transform di cl_nav
 
 <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/dfab3000-e736-475a-b6c5-784ed444837c" />
 <img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c0b58c64-61eb-43fe-b176-1132f827282b" />
 
 
-### 4) cl_row + colon
+### 5) cl_row + colon
 
 
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/8e1467f9-f30d-41c6-bcb9-48e5d6bb26b3" />
 
-### 4) cl_resampled + colon
+### 6) cl_resampled + colon
 
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/4bd8791d-bc2f-4f79-a91d-7ad2025b5c3f" />
 
 
-### 5) cl_nav + colon
+### 7) cl_nav + colon
 
 
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/c1477720-baf4-424a-a3ec-fa8fccd90ac7" />
 
-### 6) Overlay Mesh
+### 8) Overlay Mesh
 Confronto visivo tra STL originale e mesh segmentata registrata; l’allineamento finale è valutato con l’RMSE ICP.
 
 
@@ -207,7 +209,7 @@ Confronto visivo tra STL originale e mesh segmentata registrata; l’allineament
 <img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/405fda01-b239-4227-8d02-74570ccd0d87" />
 
 
-### 6) STL + Centerline registrata
+### 9) STL + Centerline registrata
 Visualizzazione della traiettoria cl_stl allineata al modello originale, coerente con la registrazione valutata tramite RMSE ICP.
 
 
