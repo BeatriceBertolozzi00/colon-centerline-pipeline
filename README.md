@@ -127,7 +127,7 @@ Script:
 
 ### Obs:
 
-Inizialmene avevo eseguito una ricerca automatica su:
+1) Inizialmene avevo eseguito una ricerca automatica su:
 - tutte le 6 permutazioni degli assi
 - tutti gli 8 flip possibili dei segni
 
@@ -145,7 +145,5 @@ Ho trovato che la configurazione migliore è risultata essere :
 
 Ho quindi fissato questa configurazione direttamente nello script finale.
 
-
-
-
+2)Devo migliorare i 3 volumi su slicer3D !!!!
 
