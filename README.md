@@ -144,6 +144,45 @@ Ho trovato che la configurazione migliore è risultata essere :
 - `flip = [-1 1 1]`
 
 Ho quindi fissato questa configurazione direttamente nello script finale.
-
 ## Devo sicuramente migliorare i 3 volumi su slicer3D !!!!
+
+---
+
+
+## Risultati grafici
+
+### 1) Diagnostica degli anchor
+Visualizzazione dei due cap, dei centroidi con normali associate e degli anchor interni selezionati come estremi della centerline.
+<img width="371" height="311" alt="image" src="https://github.com/user-attachments/assets/c9358b18-fca0-4cab-af55-1d5f6264b609" />
+### 2) Distance transform di cl_raw
+Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 3D evidenzia la centerline grezza colorata in base alla sua centralità nel lume (più D è maggiore meglio più il punto corrispondente è centrale)
+
+
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/e8d3e837-8c53-429b-b8f4-1b897c507347" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/b5515105-25de-4483-b1e5-c999d7c96462" />
+
+
+### 3) Distance transform di cl_resampled
+
+
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c8bb50dd-a204-4060-8f88-a3dd509d5f9e" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/d4652415-a256-4b36-9aad-500e7ba91f7b" />
+
+
+
+### 4) cl_row + colon
+
+
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/8e1467f9-f30d-41c6-bcb9-48e5d6bb26b3" />
+
+### 4) cl_resampled + colon
+
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/4bd8791d-bc2f-4f79-a91d-7ad2025b5c3f" />
+
+
+### 4) cl_navigata + colon
+
+
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/c1477720-baf4-424a-a3ec-fa8fccd90ac7" />
+
 
