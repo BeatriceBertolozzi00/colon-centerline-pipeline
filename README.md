@@ -145,5 +145,5 @@ Ho trovato che la configurazione migliore è risultata essere :
 
 Ho quindi fissato questa configurazione direttamente nello script finale.
 
-## 2)Devo sicuramente migliorare i 3 volumi su slicer3D !!!!
+## Devo sicuramente migliorare i 3 volumi su slicer3D !!!!
 
