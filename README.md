@@ -7,7 +7,7 @@
 Questo repository contiene una pipeline in MATLAB, sviluppata in due parti, per:
 
 - ricostruire il lume interno del colon a partire da segmentazioni volumetriche
-- estrarre una centerline geometricamente centrata
+- stimare una centerline geometricamente centrata
 - regolarizzare la traiettoria per simulazioni
 - registrare la traiettoria finale sul modello STL originale del colon
 
