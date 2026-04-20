@@ -1,41 +1,42 @@
 ==================== INPUT ====================
-Voxel shell: 1469319 | CAP1: 102986 | CAP2: 123306
-Voxel shell chiusa: 1695611
-Voxel lume: 2416983
-Max D: 32.388 voxel
+Voxel shell: 84422 | CAP1: 3330 | CAP2: 3362
+Voxel shell chiusa: 91114
+Voxel lume: 255850
+Max D: 16.155 voxel
 
-Centroide CAP1: [77.18 55.60 187.81]
-Centroide CAP2: [256.72 108.08 271.04]
-Normale CAP1:   [0.0832 0.2289 0.9699]
-Normale CAP2:   [-0.0170 0.5083 0.8610]
-CAP1: anchor trovato via normale | D=7.00
-CAP2: anchor trovato via normale | D=6.32
+Centroide CAP1: [122.83 50.95 127.78]
+Centroide CAP2: [38.24 27.21 86.60]
+Normale CAP1:   [0.0658 0.5357 0.8418]
+Normale CAP2:   [0.0562 0.2646 0.9627]
+CAP1: anchor trovato via normale | D=6.32
+CAP2: anchor trovato via normale | D=6.63
 
-Anchor1: [76 52 166] D=7.00
-Anchor2: [256 102 260] D=6.32
+Anchor1: [122 47 121] D=6.32
+Anchor2: [38 27 78] D=6.63
 
-Voxel skeleton: 1329
-Nodo skeleton start: [76 53 145] | D=26.85
-Nodo skeleton end  : [264 101 244] | D=20.81
-Path: 475 punti | costo = 1.005152
-Lunghezza centerline: 250.15 mm
+Voxel skeleton: 251
+Nodo skeleton start: [127 45 114] | D=12.69
+Nodo skeleton end  : [36 25 70] | D=14.87
+Path: 217 punti | costo = 1.806113
+Lunghezza centerline: 245.41 mm
 
 ================ VALIDAZIONE ===================
-D lungo centerline: min=6.32 | mean=24.17 | median=24.34
+D lungo centerline: min=6.32 | mean=12.07 | median=12.04
 Punti della centerline dentro BWlumen: 100.00 %
 
 ============= TRAIETTORIA NAVIGAZIONE =============
 nCtrlNav = 20
-Lunghezza traiettoria navigata: 243.34 mm
-D lungo traiettoria nav: min=6.32 | mean=24.17 | median=24.60
+Lunghezza traiettoria navigata: 238.78 mm
+D lungo traiettoria nav: min=6.32 | mean=12.02 | median=12.04
 Punti della traiettoria nav dentro BWlumen: 100.00 %
-Roughness resampled: 0.1397 | roughness navigata: 0.0616
-Deviazione NAV vs resampled | mean=2.134 voxel | max=5.860 voxel
+Roughness resampled: 0.0677 | roughness navigata: 0.0257
+Deviazione NAV vs resampled | mean=0.927 voxel | max=2.948 voxel
 
 ================ CONFRONTO RAW vs RESAMPLED ==================
-RAW        | L=287.03 mm | Dmin=6.32 | Dmean=24.29 | Dmed=24.41 | inside=100.00 % | rough=1.0537
-RESAMPLED  | L=250.15 mm | Dmin=6.32 | Dmean=24.17 | Dmed=24.34 | inside=100.00 % | rough=0.1397
-Deviazione RAW vs RESAMPLED | mean=2.959 voxel | max=7.215 voxel
+RAW        | L=291.14 mm | Dmin=6.32 | Dmean=12.09 | Dmed=12.04 | inside=100.00 % | rough=0.5055
+RESAMPLED  | L=245.41 mm | Dmin=6.32 | Dmean=12.07 | Dmed=12.04 | inside=100.00 % | rough=0.0677
+Deviazione RAW vs RESAMPLED | mean=1.266 voxel | max=3.606 voxel
 
-Salvato file intermedio: OUTPUT_CENTERLINE\centerline_from_caps.mat
+Salvato file intermedio: OUTPUTCETERLINE_2\centerline_from_caps.mat
 Parte 1 completata: centerline calcolata e salvata.
+
