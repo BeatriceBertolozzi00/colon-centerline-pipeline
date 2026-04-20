@@ -162,58 +162,65 @@ In 'docs/images' sono riportate le immagini visualizzabili in 3D in formato .fig
 
 ### 1) Diagnostica degli anchor
 Visualizzazione dei due cap, dei centroidi con normali associate e degli anchor interni selezionati come estremi della centerline.
-<img width="371" height="311" alt="image" src="https://github.com/user-attachments/assets/c9358b18-fca0-4cab-af55-1d5f6264b609" />
+<img width="400" height="320" alt="image" src="https://github.com/user-attachments/assets/b2d741cd-2a58-457b-868f-7062cff0e298" />
+
+
 
 
 ### 2) Distance transform di cl_raw
 Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 3D evidenzia la centerline grezza colorata in base alla sua centralità nel lume (più D è maggiore meglio più il punto corrispondente è centrale)
 
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/e8d3e837-8c53-429b-b8f4-1b897c507347" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/b5515105-25de-4483-b1e5-c999d7c96462" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c19ed3c9-9f43-479c-9431-084ebbdcf9bc" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/59a11e4f-576a-4f70-bd06-77870a6af6b8" />
+
 
 
 ### 3) Distance transform di cl_resampled
 
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/2c6032af-5902-4d42-8ff8-f50a39fc7103" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/2969b9a5-cf16-485b-aa8d-316da9d6452a" />
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c8bb50dd-a204-4060-8f88-a3dd509d5f9e" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/d4652415-a256-4b36-9aad-500e7ba91f7b" />
 
 
 ### 4) Distance transform di cl_nav
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/dfab3000-e736-475a-b6c5-784ed444837c" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c0b58c64-61eb-43fe-b176-1132f827282b" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/9289b18a-8cd4-4755-bdbb-90440d7e5058" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/ba2f0925-c921-4aff-b95c-a2575a995997" />
+
 
 
 ### 5) cl_row + colon
 
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/8e1467f9-f30d-41c6-bcb9-48e5d6bb26b3" />
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/f8fd410c-defa-4fb0-99cb-f2baaf803934" />
+
 
 ### 6) cl_resampled + colon
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/4bd8791d-bc2f-4f79-a91d-7ad2025b5c3f" />
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/52f3c762-9af2-4864-b965-88f52b4742f5" />
+
 
 
 ### 7) cl_nav + colon
 
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/c1477720-baf4-424a-a3ec-fa8fccd90ac7" />
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/67c3236d-ad66-48af-90f3-6a53ef750fac" />
+
 
 ### 8) Overlay Mesh
 Confronto visivo tra STL originale e mesh segmentata registrata; l’allineamento finale è valutato con l’RMSE ICP.
 
 
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/405fda01-b239-4227-8d02-74570ccd0d87" />
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/f87989d7-0d6a-45cf-ba2b-f4fe407b1124" />
+
 
 
 ### 9) STL + Centerline registrata
 Visualizzazione della traiettoria cl_stl allineata al modello originale, coerente con la registrazione valutata tramite RMSE ICP.
+<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/876c48ba-e2fa-42c1-a362-392b4a2c63ec" />
 
-
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/df2901fb-2949-4a9b-a993-49c6faf1753b" />
 
 
 
