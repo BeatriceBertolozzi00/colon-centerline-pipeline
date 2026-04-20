@@ -82,9 +82,10 @@ fprintf('Voxel shell chiusa: %d\n', nnz(BWclosed));
 % STEP 4 - Ricostruzione lume
 %% ------------------------------------------------------------
 
-
+% Ispessisco leggermente la barriera per chiudere piccoli gap voxel
+BWbarrier = imdilate(BWclosed, strel('sphere',1));
 %Aggiungo un bordo di spessore 1 voxel attorno a tutto il volume
-BWpad = padarray(BWclosed, [1 1 1], 0, 'both');
+BWpad = padarray(BWbarrier, [1 1 1], 0, 'both');
 %Marker:maschera che contiene un solo punto acceso(1)
 % creo un volume vuoto(=0) della stessa dimensione di BWpad
 marker = false(size(BWpad));
