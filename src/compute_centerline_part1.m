@@ -567,7 +567,7 @@ nCtrlNav = 20;   %20 punti distribuiti lungo la centerline resampled
 % punti di controllo presi lungo la centerline resampled
 idxCtrl = round(linspace(1, size(cl_resampled,1), nCtrlNav));
 idxCtrl = unique(idxCtrl);
-ctrlPts = cl_resampled(idxCtrl,:);
+ctrlPts = cl_resampled(idxCtrl,:);  %20 punti rappresentativi distribuiti lungo la curva
 
 % assicuro che gli estremi siano gli anchor
 ctrlPts(1,:)   = anchor1;
@@ -578,7 +578,10 @@ dCtrl = diff(ctrlPts,1,1);
 segCtrl = sqrt(sum(dCtrl.^2,2));
 sCtrl = [0; cumsum(segCtrl)];
 
-% ricampionamento spline a nSamples punti
+% Interpolazione spline: costruisco la nuova traiettoria cl_nav
+%- 20 punti di controllo
+%-una spline cubica
+%-300 campioni finali
 sCtrlUniform = linspace(0, sCtrl(end), nSamples)';
 cl_nav = zeros(nSamples,3);
 for k = 1:3
@@ -599,10 +602,10 @@ insideFrac_nav = mean(insideMask_nav) * 100;
 
 diffs_nav_mm = diff(cl_nav, 1, 1) .* voxSize;
 totalMM_nav  = sum(sqrt(sum(diffs_nav_mm.^2, 2)));
-
+%Roughness: Misuro quanto la zurva è irregolare
 rough_res = curveRoughness(cl_resampled);
 rough_nav = curveRoughness(cl_nav);
-
+%calcolo la deviazione tra cl_resempled e cl_nav
 dev_nav_vs_res = sqrt(sum((cl_nav - cl_resampled).^2, 2));
 
 fprintf('\n============= TRAIETTORIA NAVIGAZIONE =============\n');
@@ -618,7 +621,7 @@ fprintf('Deviazione NAV vs resampled | mean=%.3f voxel | max=%.3f voxel\n', ...
 
 
 %% ------------------------------------------------------------
-% STEP 20C - Ricampionamento uniforme della cl_raw per confronto corretto
+% STEP 20C - Ricampionamento uniforme della cl_raw per confronto corretto con cl<-resampled--> ricampiono anche cl_raw in 300 punti
 %% ------------------------------------------------------------
 
 diffs_raw = diff(cl_raw, 1, 1);
