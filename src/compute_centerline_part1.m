@@ -52,7 +52,7 @@ Vcap1  = niftiread(fnameCap1);
 Vcap2  = niftiread(fnameCap2);
 infoShell = niftiinfo(fnameShell);
 
-%trasformo i volumi in maschere binarie(se voxel>0 appartiene alla
+%trasformo i volumi in volumi logici binari(se voxel=1 appartiene alla
 %struttura se =0 è lo sfondo)
 BWshell = Vshell > 0;  %-->Shell binaria
 CAP1    = Vcap1  > 0;  %-->Cap1 binario
@@ -128,6 +128,7 @@ fprintf('Voxel lume: %d\n', nnz(BWlumen));
 %--> un valore piccolo di D significa che il punto è vicino alla parete
 D = bwdist(~BWlumen);
 fprintf('Max D: %.3f voxel\n', max(D(:)));
+%D(i,j,k)=A significa che il voxel (i,j,k) è lontano A dalla parete --> OBS D è in voxel e ha le stesse dimensioni di BWlumen
 
 
 %% ------------------------------------------------------------
@@ -137,10 +138,13 @@ fprintf('Max D: %.3f voxel\n', max(D(:)));
 
 %Per i due CAP ricavo centroide e normale per capire dove si trova
 %l'apertura e in quale direzione entrare nel lume
-cCap1 = getCentroid(CAP1);
+%Quindi per ogni tappo ottengo:
+%-un punto centrale
+%-una direzione perpendicolare al tappo
+cCap1 = getCentroid(CAP1);  %-->Rappresenta il punto di partenza per cercare l’anchor
 cCap2 = getCentroid(CAP2);
 
-nCap1 = getCapNormalPCA(CAP1);
+nCap1 = getCapNormalPCA(CAP1); %--> stimo la direzione perpendicolare al cap
 nCap2 = getCapNormalPCA(CAP2);
 
 fprintf('\nCentroide CAP1: [%.2f %.2f %.2f]\n', cCap1);
@@ -150,14 +154,14 @@ fprintf('Normale CAP2:   [%.4f %.4f %.4f]\n', nCap2);
 
 
 %% ------------------------------------------------------------
-% STEP 7 - Anchor dai cap usando la NORMALE:gli anchor sono i due punti estremi interni al lume
+% STEP 7 - Anchor dai cap usando la NORMALE:gli anchor sono i due punti estremi interni al lume da cui far partire/finire centerline
 %
-% -parte dal centroide
-% -prova a muoversi lungo +n e -n
+% -parte dal centroide del Cap
+% -prova a muoversi lungo la normale
 % -cerca in quale verso si entra nel lume
 % -appena entra nel lume trova un primo punto interno
 % -attorno a quel punto costruisce una piccola regione locale
-%-dentro quella regione sceglie il voxel con D massima
+%-dentro quella regione sceglie il voxel con D massima--> questo voxel è l'anchor
 %% ------------------------------------------------------------
 
 
@@ -268,7 +272,7 @@ hold off;
 
 %Calcolo lo skeleton 3D del volume binario
 minBranch = 15;%elimino rami molto piccoli
-Skel = bwskel(BWlumen, 'MinBranchLength', minBranch);
+Skel = bwskel(BWlumen, 'MinBranchLength', minBranch); %--> ottengo lo skeleton che è una rappresentazione molto più sottile di bwlume
 
 if ~any(Skel(:))
     error('Skeleton vuoto.');
@@ -278,29 +282,41 @@ CCs = bwconncomp(Skel, 26);%tengo solo la componente principale-->la componente 
 numPixS = cellfun(@numel, CCs.PixelIdxList);
 
 SkelMain = false(size(Skel));
-[~, idxS] = max(numPixS);
+[~, idxS] = max(numPixS);   %trovo la componente dello skeleton più grande 
 SkelMain(CCs.PixelIdxList{idxS}) = true;
 
 fprintf('\nVoxel skeleton: %d\n', nnz(SkelMain)); %stampo i voxel che compongono lo skeleton principale
+%--> Skel:È lo skeleton 3D completo del lume, dopo la rimozione dei rametti più corti di minBranch
+%-->SkelMain:È  la componente connessa più grande dello skeleton (che poi utilizzo per fare il grafo)
+%--> Ho usato gli anchor proprio per non far dipendere gli estremi della centerline dagli endpoint grezzi skeleton, che vicino alle aperture rrisultavano essere troppo spinti verso il fondo e non ben centrati.
 
 
 %% ------------------------------------------------------------
 % STEP 10 - Grafo pesato dello skeleton
+%-ogni voxel dello skeleton diventa un nodo
+%-due voxel vicini vengono collegati con un arco
+%-a ogni arco assegno un peso
+%-il peso è costruito in modo da favorire le zone più centrali del lume
+%-poi faccio shortest path sul grafo
 %% ------------------------------------------------------------
 
-%Ogni voxel dello skeleton principale diventa un nodo del gafo
-skelIdx = find(SkelMain);
-nNodes  = numel(skelIdx);
-
+%Ogni voxel dello skeleton SkelMain diventa un nodo del gafo
+skelIdx = find(SkelMain); %restituisco gli indici lineari di tutti i voxel dello skeleton principale
+nNodes  = numel(skelIdx); %numero totale di nodi del grafo
+%trasformo ogni indice lineare nelle coordinate voxel
 [xs, ys, zs] = ind2sub(size(SkelMain), skelIdx);
 coords = [xs ys zs];
-Dvals  = D(skelIdx);
+Dvals  = D(skelIdx);  %valore della distance transform in quel voxel skeleton
 
+%faccio una corrispondenza veloce tra:
+%-indice lineare del voxel nello spazio 3D
+%-indice del nodo nel grafo
+%es: lin2node(15328) = 47 vuol dire: il voxel con indice lineare 15328 corrisponde al nodo 47 del grafo
 lin2node = containers.Map('KeyType','uint32','ValueType','uint32');
 for i = 1:nNodes
     lin2node(uint32(skelIdx(i))) = uint32(i);
 end
-
+%offsets è la lista dei possibili vicini di ciascun nodo
 offsets = [];
 for dx = -1:1
     for dy = -1:1
@@ -312,15 +328,17 @@ for dx = -1:1
     end
 end
 
+%Vettori che conterranno gli archi
 I_ = []; %nodo di partenza dell'arco
 J_ = []; %nodo di arrivo dell'arco
 W_ = []; %peso dell'arco
 
 szV   = size(SkelMain);
-alpha = 2.0;
+alpha = 2.0;  %parametro che favorisce la centralità (maggiore è alpha, più il peso dipende da D)
 epsW  = 0.5;
-
+%ciclo su tutti i nodi
 for i = 1:nNodes
+%ciclo sui vicini
     for k = 1:size(offsets,1)
         xn = coords(i,1) + offsets(k,1);
         yn = coords(i,2) + offsets(k,2);
@@ -330,23 +348,24 @@ for i = 1:nNodes
            xn > szV(1) || yn > szV(2) || zn > szV(3)
             continue;
         end
-
+%converto il vicino in indice lineare
         linN = sub2ind(szV, xn, yn, zn);
+%Controllo che il vicino appartenga allo skeleton: se on lo è,allora non è un nodo del grafo e non creo nessun arco--> collego solo voxel skeleton vinini tra loro
         if ~SkelMain(linN)
             continue;
         end
-
+%Recupero il numero del nodo vicino
         j = double(lin2node(uint32(linN)));
         if j <= i
             continue;
         end
-
+%calcolo la lunghezza dell'arco
         dij   = norm(offsets(k,:));
+        %dmean misura quanto quell’arco si trova in una zona centrale del lume.
         dmean = 0.5 * (Dvals(i) + D(linN));
-        wij   = dij / (dmean + epsW)^alpha; %Per ogni nodo, guardo tutti i vicini. 
-        % Se il vicino appartiene allo skeleton e non è già stato
-        % collegato, viene creato un arco.
-        %Il peso dell'arco dipendee da D
+        %Il peso dell’arco cresce con la distanza geometrica dij e diminuisce con la centralità dmean
+        wij   = dij / (dmean + epsW)^alpha; . 
+       
 
         I_(end+1,1) = i; 
         J_(end+1,1) = j; 
@@ -355,46 +374,51 @@ for i = 1:nNodes
 end
 
 G = graph(I_, J_, W_);%--> grafo pesato dello skeleton
+%--> Ho costruito un grafo in cui:
+%-ogni voxel skeleton è un nodo
+%-due voxel adiacenti sono connessi
+%-ogni connessione costa meno se passa in zone più centrali del lume
 
 
 %% ------------------------------------------------------------
 % STEP 11 - Aggancio anchor allo skeleton
+%per ciascun anchor(che noon necessariamente sono voxel dello skeleton) cerco alcuni nodi skeleton vicini, 
+%poi scelgo quello migliore come compromesso tra essere vicino all’anchor ed essere centrale nel lume
 %% ------------------------------------------------------------
 
 
-%Calcolo la distanza di ogni nodo skeleton dall’anchor
+%Calcolo la distanza di ogni nodo skeleton dagli anchor
 dStart = sqrt(sum((coords - anchor1).^2, 2));
 dEnd   = sqrt(sum((coords - anchor2).^2, 2));
 
-kNear = 30;
+kNear = 30; %considero solo i 30 nodi dello skeleton più vicini agli anchor
 %ordino questi nodi per distanza crescente
 [~, ordS] = sort(dStart, 'ascend');
 [~, ordE] = sort(dEnd,   'ascend');
 
-candS = ordS(1:min(kNear, numel(ordS)));
-candE = ordE(1:min(kNear, numel(ordE)));
+candS = ordS(1:min(kNear, numel(ordS))); %--> fino a 30 nodi skeleton più vicini ad anchor1
+candE = ordE(1:min(kNear, numel(ordE))); %-->fino a 30 nodi skeleton più vicini ad anchor2
 
-% scelta più robusta del nodo:
-% combina vicinanza all'anchor + centralità D
+%Recupero le distanze dei candidati
 distS = dStart(candS);
 distE = dEnd(candE);
-
+%Normalizzo le distanze
 distS_n = distS / (max(distS) + eps);
 distE_n = distE / (max(distE) + eps);
-
+%Normalizzo anche la centralità D
 DvalsS_n = Dvals(candS) / (max(Dvals(candS)) + eps);
 DvalsE_n = Dvals(candE) / (max(Dvals(candE)) + eps);
 
-%per ogni candidato controllo vicinanza e centralità
+%per ogni candidato controllo vicinanza e centralità dando il 60% importanza alla centralità e 40% importanza alla vicinanza--> premio la centralità e penalizzo la distanza
 scoreS = 0.6 * DvalsS_n - 0.4 * distS_n;
 scoreE = 0.6 * DvalsE_n - 0.4 * distE_n;
-
+%trovo il miglior candidato tra i 30 vicini
 [~, iBestS] = max(scoreS);
 [~, iBestE] = max(scoreE);
 
 %nodi iniziali e finali dello shortest path
-nodeStart = candS(iBestS);
-nodeEnd   = candE(iBestE);
+nodeStart = candS(iBestS);  %-->nodo dello skeleton scelto come inizio del path
+nodeEnd   = candE(iBestE);  %-->nodo dello skeleton scelto come fine del path
 
 fprintf('Nodo skeleton start: [%d %d %d] | D=%.2f\n', ...
         coords(nodeStart,1), coords(nodeStart,2), coords(nodeStart,3), Dvals(nodeStart));
@@ -403,19 +427,19 @@ fprintf('Nodo skeleton end  : [%d %d %d] | D=%.2f\n', ...
 
 
 %% ------------------------------------------------------------
-% STEP 12 - Shortest path
+% STEP 12 - Shortest path--> Dal grafo dello skeleton, ottiengo il percorso centrale ordinato tra inizio e fine.
 %% ------------------------------------------------------------
 
 
-%cerco il percorso che minimizza la somma dei pesi degli archi-->siccome i pesi del grafo 
-% sono stati costruiti per favorire le zone centrali, il path risultane èquello che tende a passare nelle zone con centralità maggiore.
-[bestPath, bestCost] = shortestpath(G, nodeStart, nodeEnd);
+%shortestpath seleziona tra tutti i possibili percorsi che collegano nodeStart e nodeEnd sullo skeleton  quello con costo totale minimo.
+%--> Dato che i pesi degli archi penalizzano le zone meno centrali, il percorso minimo tende a passare dove D è più alta.
+[bestPath, bestCost] = shortestpath(G, nodeStart, nodeEnd); %obs: bestPath è un vettore di indici di nodo del grafo e bestCost è la somma dei wij lungo tutti gli archi del path
 
 if isempty(bestPath)
     error('Nessun path trovato.');
 end
 
-centerline_vox = coords(bestPath,:);
+centerline_vox = coords(bestPath,:);  %Conversione del path in coordinate voxel
 fprintf('Path: %d punti | costo = %.6f\n', numel(bestPath), bestCost);
 
 
@@ -425,7 +449,7 @@ fprintf('Path: %d punti | costo = %.6f\n', numel(bestPath), bestCost);
 %% ------------------------------------------------------------
 
 
-cl_raw = [anchor1; centerline_vox; anchor2]; %centerline grezza
+cl_raw = [anchor1; centerline_vox; anchor2]; %centerline grezza:metto insieme centerline_vox e i due anchor
 
 
 
@@ -435,27 +459,29 @@ cl_raw = [anchor1; centerline_vox; anchor2]; %centerline grezza
 
 
 %regolarizzo la curva tramite smoothing
-% correzione : prima ricampionamento uniforme della curva grezza,
+% prima faccio un ricampionamento uniforme della curva grezza,
 % poi smoothing su punti con distribuzione geometrica più regolare
+
+%calcolo la differenza tra ogni punto e il successivo
 diffs_raw0  = diff(cl_raw, 1, 1);
-segLen_raw0 = sqrt(sum(diffs_raw0.^2, 2));
+segLen_raw0 = sqrt(sum(diffs_raw0.^2, 2)); %calcolo la lunghezza euclidea di ogni segmento
 arcLength_raw0 = [0; cumsum(segLen_raw0)];
 %la curva grezza viene prima ricampionata in 300 punti 
 % uniformemente distribuiti lungo la lunghezza d’arco
 
-nSamples = 300;
-sUniform_raw0 = linspace(0, arcLength_raw0(end), nSamples)';
+nSamples = 300;  %rappresento la curva con 300 punti
+sUniform_raw0 = linspace(0, arcLength_raw0(end), nSamples)'; --> vprendo 300 posizioni uniformemente distribuite lungo la lunghezza della curva
 
-%Interpolazione con pchip
+%Primo ricampionamento uniforme con interp1 (obs interpolazione separata per x,y,z)
 cl_uniform_first = zeros(nSamples,3);
 for k = 1:3
     cl_uniform_first(:,k) = interp1(arcLength_raw0, cl_raw(:,k), sUniform_raw0, 'pchip');
 end
-
+%Reimpongo gli estremi
 cl_uniform_first(1,:)   = anchor1;
 cl_uniform_first(end,:) = anchor2;
 
-%Smoothing
+%Smoothing coordinata per coordinata usando una media mobile di finestra 11.
 win = 11;
 cl_smooth = cl_uniform_first;
 
@@ -463,13 +489,13 @@ for k = 1:3
     cl_smooth(:,k) = smoothdata(cl_uniform_first(:,k), 'movmean', win);
 end
 
-%reimpongo esplicitamente gli estremi per evitare che lo smoothing li sposti
+%reimpongo esplicitamente gli estremi nel caso in cui lo smoothing li abbia spostati
 cl_smooth(1,:)   = anchor1;
 cl_smooth(end,:) = anchor2;
 
 
 %% ------------------------------------------------------------
-% STEP 15 - Ricampionamento uniforme della centerline
+% STEP 15 - Secondo ricampionamento uniforme della centerline
 %% ------------------------------------------------------------
 
 %ricampionamento finale
@@ -828,11 +854,11 @@ function n = getCapNormalPCA(BW)
 end
 
 function [anchor, regionMask, rayPts] = getAnchorFromCapNormal(CAP, BWlumen, D, centroid, normalVec, name)
-    stepSize = 0.5;
-    maxStep  = 120;
-    searchR  = 6;
+    stepSize = 0.5;  %mi muovo lungo la normale di mezzo voxel
+    maxStep  = 120;  %Numero massimo di passi lungo una direzione
+    searchR  = 6;   %Quando trovo il primo punto dentro il lume, costruisco una regione locale di raggio 6 voxel attorno a quel punto
 
-    dirs = [normalVec; -normalVec];
+    dirs = [normalVec; -normalVec]; %provo entrambi i versi della normale per vedere quale è quella giusta per entrare dentro il lume
 
     found = false;
     bestAnchor = [];
@@ -840,17 +866,20 @@ function [anchor, regionMask, rayPts] = getAnchorFromCapNormal(CAP, BWlumen, D, 
     bestRay = [];
     bestD = -inf;
 
-    for d = 1:2
+    for d = 1:2  %Ciclo sui due versi della normale
         dirVec = dirs(d,:);
         ray = [];
 
         entered = false;
         entryPoint = [];
-
+%per ogni passo k:
+%-Parto dal centroide
+%-mi sposto di k*stepSize lungo la direzione dirVec
+%---> ottengo P che è un punto continuo
         for k = 0:maxStep
             p = centroid + k * stepSize * dirVec;
             ray = [ray; p]; %#ok<AGROW>
-
+%Trovo il voxel corrispondente a P
             xi = round(p(1));
             yi = round(p(2));
             zi = round(p(3));
@@ -859,7 +888,9 @@ function [anchor, regionMask, rayPts] = getAnchorFromCapNormal(CAP, BWlumen, D, 
                xi > size(BWlumen,1) || yi > size(BWlumen,2) || zi > size(BWlumen,3)
                 break;
             end
-
+%Se il voxel corrente appartiene al lume:
+%-->ho trovato il primo ingresso nel lume
+%-->salvo quel punto come entryPoint
             if BWlumen(xi,yi,zi)
                 entered = true;
                 entryPoint = [xi yi zi];
@@ -870,18 +901,21 @@ function [anchor, regionMask, rayPts] = getAnchorFromCapNormal(CAP, BWlumen, D, 
         if ~entered
             continue;
         end
-
+%Recupero tutti i voxel del lume
         [lx,ly,lz] = ind2sub(size(BWlumen), find(BWlumen));
         lumenPts = [lx ly lz];
         linLumen = find(BWlumen);
-
+%Qui calcolo, per ogni voxel del lume:
+%-la distanza euclidea da entryPoint
+%-Poi faccio una soglia: inside = true se il voxel è entro searchR = 6
+%ottengo una regione locale nel lume attorno ad entrypoint
         dist = sqrt(sum((lumenPts - entryPoint).^2, 2));
         inside = dist <= searchR;
 
         if ~any(inside)
             continue;
         end
-
+%Costruisco la maschera della regione locale
         regionMask = false(size(BWlumen));
         regionMask(linLumen(inside)) = true;
         regionMask = keepLargestComponent(regionMask, 26);
@@ -889,7 +923,7 @@ function [anchor, regionMask, rayPts] = getAnchorFromCapNormal(CAP, BWlumen, D, 
         if ~any(regionMask(:))
             continue;
         end
-
+%QUI SCELGO ANCHOR:tra tutti i voxel della regione locale, scelgo quello con valore D massimo--> è il punto più centrale in una piccola regione locale dopo l’ingresso e non semplicemente il primo voxel che incontro dentro il lume
         candidate = argmaxMask(D, regionMask);
         dval = D(candidate(1), candidate(2), candidate(3));
 
