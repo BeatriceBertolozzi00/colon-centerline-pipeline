@@ -10,6 +10,11 @@
 %   - OUTPUT_REGISTRATION/colon_registered.stl
 %   - OUTPUT_REGISTRATION/centerline_tube_thin.stl
 
+
+%Idea:
+%-Tengo fermo lo STL originale → Vstl
+%-muovo la mesh segmentata ricavata da BWshell → Vseg_mm
+%-muovo insieme anche la centerline → cl_mm
 %% ============================================================
 
 clear; clc; close all;
@@ -49,9 +54,9 @@ fprintf('Caricato file intermedio: %s\n', inMAT);
 
 fprintf('\n================ REGISTRAZIONE STL ===================\n');
 
-% Estraggo una mesh triangolare dal volume binario BWshell
-% La mesh qui è ancora in coordinate voxel
+% Estraggo una mesh triangolare dal volume binario BWshell(obs : BWshell è ancoraa un volume binario 3D che rappresenta la shell del colon)
 fvSeg = isosurface(BWshell, 0.5);
+%OBS: vertici E triangoli della mesh sono ancora nello spazio dei voxel, non nello spazio fisico
 Fseg_vox = fvSeg.faces;  %facce della mesh segmentata
 Vseg_vox = fvSeg.vertices; %vertici della mesh segmentata
 
@@ -59,18 +64,18 @@ Vseg_vox = fvSeg.vertices; %vertici della mesh segmentata
 fprintf('Mesh segmentazione estratta: %d vertici | %d facce\n', ...
         size(Vseg_vox,1), size(Fseg_vox,1));
 
-% Trasformazione voxel -> coordinate fisiche NIfTI
+% Trasformazione da coordinate della griglia voxel -> coordinate fisiche NIfTI : [xmm​,ymm​,zmm​,1]^T=T*[xvox​,yvox​,zvox​,1]^T
 Tnifti = infoShell.Transform.T';
 
-%Applico la trasformazione alla mesh segmentata e alla centerline
-Vseg_mm = applyNiftiTransformToIsoVerts(Vseg_vox, Tnifti);
+%Applico la trasformazione alla mesh segmentata(Vseg_mm) e alla centerline
+Vseg_mm = applyNiftiTransformToIsoVerts(Vseg_vox, Tnifti); %--> Vseg_vox  -->  Vseg_mm
 cl_mm   = applyNiftiTransformToCurve(cl_nav, Tnifti);
 
 fprintf('Trasformazione NIfTI applicata a mesh segmentazione e centerline.\n');
 
 
 %% ------------------------------------------------------------
-% STEP 4 - Caricamento STL originale
+% STEP 4 - Caricamento STL originale(colon_open.STL)
 %% ------------------------------------------------------------
 
 if exist(fnameSTL, 'file') ~= 2
@@ -98,24 +103,22 @@ printBounds('STL originale',    Vstl);
 
 %% ------------------------------------------------------------
 % STEP 6 - Permutazione/flip fissati + ICP
-%
-% Visto che la mesh segmentata non è orientata come lo STL originale, eseguo una ricerca automatica su:
-%
-%   permList = perms(1:3)
-%   flipList = tutti gli 8 vettori di segno [+/-1 +/-1 +/-1]
-%
+%Ora ho:
+%-Vseg_mm = mesh ottenuta dalla segmentazione, già in coordinate fisiche NIfTI
+%-Vstl = mesh STL originale
+%--> PROBLEMA: NON sono ancora nello stesso orientamento!!
+% Visto che la mesh segmentata non è orientata come lo STL originale, trovo automaticamente la configurazione migliore tra:
+%-tutte le 6 permutazioni degli assi
+%-tutti gli 8 flip possibili dei segni
+
+
 % Per ogni combinazione:
 %   1) ptsSegTry = ptsSegBase(:,perm)
 %   2) ptsSegTry = ptsSegTry .* flipv
 %   3) centratura sui centroidi
 %   4) ICP contro lo STL
 %   5) scelta della configurazione con RMSE minimo
-%
-% Per il dataset corrente, la configurazione migliore già trovata è:
-%   perm = [2 3 1] --> se un punto ero [x y z] , ora diventa [y z x]
-%   flip = [-1 1 1] --> asse x cambiato di segno: [x y z] -> [-x y z]
-%
-% Quindi qui la applico direttamente.
+
 % fprintf('Ricerca automatica permutazioni/flips + ICP...\n');
 % 
 % nSegSample = min(25000, size(Vseg_mm,1));
@@ -213,6 +216,11 @@ printBounds('STL originale',    Vstl);
 % 
 % cSeg = mean(bestPtsSegInit,1);
 % cStl = mean(ptsStl,1);
+% Per il dataset corrente, la configurazione migliore già trovata è:
+%   perm = [2 3 1] --> se un punto era [x y z] , ora diventa [y z x]
+%   flip = [-1 1 1] --> asse x cambiato di segno: [x y z] -> [-x y z]
+%
+% Quindi qui la applico direttamente.
 %% ------------------------------------------------------------
 
 fprintf('\nUso permutazione e flip fissati + ICP...\n');
@@ -228,19 +236,20 @@ fprintf('Flip fissato:         [%d %d %d]\n', bestFlip);
 Vseg_pf = Vseg_mm(:, bestPerm) .* bestFlip;
 cl_pf   = cl_mm(:,   bestPerm) .* bestFlip;
 
-% Campionamento dei punti per ICP: prendi al massimo 25.000 punti da ciascuna mesh.
+% Campionamento dei punti per ICP: prendo al massimo 100.000 punti da ciascuna mesh.
 nSegSample = min(100000, size(Vseg_pf,1));
 nStlSample = min(100000, size(Vstl,1));
 
-rng(1);
+rng(1);  %campionamento causale
+%Selezione casuale dei vertici dalla mesh segmentata e dalla mesh STL
 idxSeg = randperm(size(Vseg_pf,1), nSegSample);
 idxStl = randperm(size(Vstl,1), nStlSample);
 
-%Estraggo i punti campionati
-ptsSeg = Vseg_pf(idxSeg,:);
-ptsStl = Vstl(idxStl,:);
+%Ottiengo due insiemi di punti 3D:
+ptsSeg = Vseg_pf(idxSeg,:); %moving
+ptsStl = Vstl(idxStl,:);   fixed
 
-% Centratura sui centroidi prima di ICP
+% Centratura sui centroidi (media delle coordinate di ogni insieme di punti) prima di ICP
 cSeg = mean(ptsSeg,1);  %centroide segmentazione
 cStl = mean(ptsStl,1);  %centroide STL
 
@@ -399,9 +408,15 @@ fprintf('\nSalvato: %s\n', outMAT);
 fprintf('Parte 2 completata.\n');
 
 %% ============================================================
-% FUNZIONI LOCALI NECESSARIE ALLA PARTE 2
+% FUNZIONI LOCALI
 %% ============================================================
 
+
+%Questa funzione er ogni vertice della mesh:
+%-prende il vertice voxel
+%-lo scrive in coordinate omogenee [x;y;z;1]
+%-applica la matrice affine NIfTI
+%-salva il risultato in mm --> Vseg_vox  -->  Vseg_mm
 function Vmm = applyNiftiTransformToIsoVerts(Vvox, T)
     n = size(Vvox,1);
     Vmm = zeros(n,3);
