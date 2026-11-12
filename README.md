@@ -1,226 +1,245 @@
-# Pipeline per la ricostruzione e registrazione della centerline del colon<br> 
+# Colon Centerline Reconstruction and Registration Pipeline
 
+## Overview
 
+This repository contains a MATLAB pipeline, divided into two main parts, designed to:
 
-## Descrizione generale
+- Reconstruct the internal colon lumen from volumetric segmentations.
+- Extract a geometrically centered colon centerline.
+- Regularize the resulting trajectory for simulation and navigation purposes.
+- Register the final trajectory to the original colon STL model.
 
-Questo repository contiene una pipeline in MATLAB, sviluppata in due parti, per:
+The workflow combines:
 
-- ricostruire il lume interno del colon a partire da segmentazioni volumetriche
-- stimare una centerline geometricamente centrata
-- regolarizzare la traiettoria per simulazioni
-- registrare la traiettoria finale sul modello STL originale del colon
-
-
-Il workflow combina:
-- **3D Slicer** per il preprocessing e la generazione degli input volumetrici
-- **MATLAB** per la ricostruzione del lume, il calcolo della centerline, la validazione e la registrazione finale sullo STL originale
-
-
-## 3D Slicer
-
-
-In 3D Slicer ho eseguito tre operazioni PRINCIPALI:
-
-### 1. Costruzione di una rappresentazione volumetrica del colon
-
-Si è passati da una mesh superficiale a una segmentazione voxelizzata del colon
-
-### 2. Definizione di una shell chiusa del colon
-
-Ho costruito una parete chiusa del colon, in modo da poter distinguere chiaramente:
-- esterno
-- parete
-- interno
-
-Questo passaggio era necessario per poter ricostruire in MATLAB il lume interno.
-
-### 3. Creazione di due cap separati
-
-Ho creato due cap distinti:
-- `CAP_1`
-- `CAP_2`
-
-Questi cap servono come marker geometrici delle due aperture del colon.
-
-In pratica impongono all’algoritmo le due condizioni al bordo della traiettoria:
-- la centerline deve iniziare in corrispondenza di una apertura
-- la centerline deve terminare in corrispondenza dell’altra apertura
-
-### Output esportati da 3D Slicer
-
-Da Slicer sono stati esportati tre volumi:
-- la shell del colon voxelizzata
-- il cap della prima estremità
-- il cap della seconda estremità
-
+- **3D Slicer** for preprocessing and volumetric input generation.
+- **MATLAB** for lumen reconstruction, centerline extraction, validation, and final registration to the original STL model.
 
 ---
 
+## 3D Slicer
 
+Three main preprocessing steps were performed in 3D Slicer.
 
+### 1. Volumetric Representation of the Colon
+
+The original surface mesh was converted into a voxel-based segmentation of the colon.
+
+### 2. Construction of a Closed Colon Shell
+
+A closed representation of the colon wall was created to distinguish between:
+
+- Exterior region
+- Colon wall
+- Internal lumen
+
+This step was necessary to enable the reconstruction of the internal lumen in MATLAB.
+
+### 3. Creation of Two Separate Caps
+
+Two separate caps were created:
+
+- `CAP_1`
+- `CAP_2`
+
+These caps serve as geometric markers identifying the two openings of the colon.
+
+They provide the boundary conditions for centerline extraction:
+
+- The centerline must start at one colon opening.
+- The centerline must terminate at the opposite opening.
+
+### Outputs Exported from 3D Slicer
+
+Three volumetric datasets were exported:
+
+- Voxelized colon shell
+- First opening cap
+- Second opening cap
+
+---
 
 ## MATLAB
 
-La pipeline in matlab è composta da due parti:
+The MATLAB pipeline consists of two main parts.
 
-### Parte 1 — Ricostruzione della centerline
+### Part 1 — Centerline Reconstruction
 
-Script:
-`compute_centerline_part1.m`
+**Script:** `compute_centerline_part1.m`
 
-#### Input
+#### Inputs
+
 - `Segmentation_colon-colonShell_2-label.nii`
 - `Segmentation_colon-Cap_1-label.nii`
 - `Segmentation_colon-Cap_2-label_1.nii`
 
-#### Logica della parte 1
-1. lettura dei volumi NIfTI (esportati da 3D Slicer)
-2. costruzione della shell chiusa del colon tramite unione di shell e cap
-3. ricostruzione del lume interno mediante flood fill dell’esterno
-4. calcolo della distance transform del lume
-5. stima di centroide e normale dei due cap
-6. individuazione di due anchor interni al lume a partire dai cap
-7. estrazione dello skeleton del lume
-8. selezione della componente principale dello skeleton
-9. costruzione di un grafo pesato sui voxel dello skeleton
-10. calcolo dello shortest path tra i due estremi
-11. costruzione della centerline grezza
-12. smoothing e ricampionamento uniforme
-13. generazione di una traiettoria ulteriormente regolarizzata per navigazione
-14. validazione quantitativa delle traiettorie
+#### Processing Steps
 
-#### Output principale
+1. Load the NIfTI volumes exported from 3D Slicer.
+2. Construct a closed colon shell by combining the shell and the two caps.
+3. Reconstruct the internal lumen using an exterior flood-fill approach.
+4. Compute the distance transform of the lumen.
+5. Estimate the centroid and surface normal of each cap.
+6. Identify two internal lumen anchors based on the cap geometry.
+7. Extract the lumen skeleton.
+8. Select the main connected component of the skeleton.
+9. Construct a weighted graph from the skeleton voxels.
+10. Compute the shortest path between the two endpoints.
+11. Extract the raw centerline from the resulting path.
+12. Apply smoothing and uniform resampling.
+13. Generate an additional regularized trajectory for navigation purposes.
+14. Perform quantitative validation of the resulting trajectories.
+
+#### Main Output
+
 - `centerline_from_caps.mat`
 
-## Tipi di centerline calcolati
+### Generated Centerline Representations
 
-- `cl_raw`: centerline grezza estratta dal path sullo skeleton
-- `cl_resampled`: centerline smussata e ricampionata uniformemente
-- `cl_nav`: traiettoria regolarizzata finale per navigazione
+Three different centerline representations are computed:
 
+- **`cl_raw`**: Raw centerline extracted from the shortest path along the skeleton.
+- **`cl_resampled`**: Smoothed and uniformly resampled centerline.
+- **`cl_nav`**: Final regularized trajectory intended for navigation and simulation.
 
 ---
 
-### Parte 2 — Registrazione della centerline sullo STL originale
+### Part 2 — Centerline Registration to the Original STL
 
-Script:
-`register_centerline_to_stl_part2.m`
+**Script:** `register_centerline_to_stl_part2.m`
 
-#### Input
+#### Inputs
+
 - `centerline_from_caps.mat`
 - `colon_open.stl`
 
-#### Logica della parte 2
-1. caricamento dei risultati della parte 1
-2. estrazione di una mesh triangolare dalla segmentazione del colon
-3. trasformazione della mesh e della centerline dal sistema voxel al sistema fisico NIfTI
-4. caricamento dello STL originale
-5. applicazione di una permutazione degli assi e di un flip dei segni, identificati come ottimali per il dataset
-6. raffinamento finale dell’allineamento tramite ICP
-7. applicazione della trasformazione finale alla mesh e alla centerline
-8. visualizzazione dell’overlay tra mesh registrata e STL originale
-9. visualizzazione finale di STL e centerline registrata
-10. costruzione di un tubo sottile attorno alla centerline
-11. esportazione finale degli STL
+#### Processing Steps
 
-#### Output principali
+1. Load the centerline reconstruction results from Part 1.
+2. Extract a triangular surface mesh from the colon segmentation.
+3. Transform both the mesh and the centerline from voxel coordinates to the physical NIfTI coordinate system.
+4. Load the original colon STL model.
+5. Apply the axis permutation and sign flips previously identified as optimal for the dataset.
+6. Refine the alignment using the Iterative Closest Point (ICP) algorithm.
+7. Apply the final transformation to both the segmented mesh and the centerline.
+8. Visualize the overlay between the registered mesh and the original STL model.
+9. Visualize the registered centerline within the original colon STL.
+10. Generate a thin tubular mesh around the final centerline.
+11. Export the resulting STL files.
+
+#### Main Outputs
+
 - `centerline_caps_final_registered.mat`
 - `colon_registered.stl`
 - `centerline_tube_thin.stl`
 
 ---
 
-### Obs:
+## Additional Notes
 
-1) Inizialmene avevo eseguito una ricerca automatica su:
-- tutte le 6 permutazioni degli assi
-- tutti gli 8 flip possibili dei segni
+### 1. Axis Permutation and Flip Optimization
 
-per un totale di 48 configurazioni iniziali.
+An initial automatic search was performed to identify the optimal coordinate transformation between the segmented colon mesh and the original STL model.
 
-Per ciascuna configurazione:
-- veniva applicata permutazione e flip alla mesh segmentata
-- i punti venivano centrati sui rispettivi centroidi
-- veniva eseguito ICP contro lo STL originale
-- si confrontava l’RMSE finale
+The search considered:
 
-Ho trovato che la configurazione migliore è risultata essere :
+- All 6 possible axis permutations.
+- All 8 possible combinations of axis sign flips.
+
+This resulted in **48 candidate initial configurations**.
+
+For each configuration:
+
+1. The corresponding axis permutation and sign flips were applied to the segmented mesh.
+2. The transformed mesh and the reference STL were centered using their respective centroids.
+3. ICP registration was performed against the original STL model.
+4. The final Root Mean Square Error (RMSE) was evaluated and compared.
+
+The best-performing configuration was:
+
 - `perm = [2 3 1]`
 - `flip = [-1 1 1]`
 
-Ho quindi fissato questa configurazione direttamente nello script finale.
+This configuration was subsequently fixed in the final registration script.
 
-2)  
-## Devo sicuramente migliorare i 3 volumi su slicer3D (soprattutto i CAP!!!!)
+### 2. Current Limitations and Future Improvements
+
+The three input volumes generated in 3D Slicer still require further refinement, **particularly the two cap segmentations (`CAP_1` and `CAP_2`)**.
+
+Improving the quality and geometric accuracy of these inputs is an important next step toward obtaining a more reliable centerline reconstruction.
 
 ---
 
+## Visualization Results
 
-## Risultati grafici
-In 'docs/images' sono riportate le immagini visualizzabili in 3D in formato .fig.
+The `docs/images` directory contains the graphical results of the pipeline, saved as MATLAB `.fig` files for interactive 3D visualization.
 
-### 1) Diagnostica degli anchor
-Visualizzazione dei due cap, dei centroidi con normali associate e degli anchor interni selezionati come estremi della centerline.
-<img width="400" height="320" alt="image" src="https://github.com/user-attachments/assets/b2d741cd-2a58-457b-868f-7062cff0e298" />
+### 1. Anchor Diagnostics
 
+Visualization of the two caps, their estimated centroids and associated normal vectors, and the selected internal anchors used to define the centerline endpoints.
 
+![Anchor diagnostics](https://github.com/user-attachments/assets/b2d741cd-2a58-457b-868f-7062cff0e298)
 
+### 2. Distance Transform Along `cl_raw`
 
-### 2) Distance transform di cl_raw
-Il grafico mostra D (distance transform) lungo la curva cl_raw, mentre la vista 3D evidenzia la centerline grezza colorata in base alla sua centralità nel lume (più D è maggiore meglio più il punto corrispondente è centrale)
+The plot shows the distance transform values (D) evaluated along the raw centerline (`cl_raw`).
 
+The corresponding 3D visualization displays the raw centerline colored according to its distance from the lumen boundary.
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/c19ed3c9-9f43-479c-9431-084ebbdcf9bc" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/59a11e4f-576a-4f70-bd06-77870a6af6b8" />
+Higher D values indicate points located farther from the colon wall and therefore generally closer to the central region of the lumen.
 
+![Raw centerline distance transform plot](https://github.com/user-attachments/assets/c19ed3c9-9f43-479c-9431-084ebbdcf9bc)
 
+![Raw centerline distance transform 3D visualization](https://github.com/user-attachments/assets/59a11e4f-576a-4f70-bd06-77870a6af6b8)
 
-### 3) Distance transform di cl_resampled
+### 3. Distance Transform Along `cl_resampled`
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/2c6032af-5902-4d42-8ff8-f50a39fc7103" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/2969b9a5-cf16-485b-aa8d-316da9d6452a" />
+Distance transform analysis of the smoothed and uniformly resampled centerline (`cl_resampled`).
 
+![Resampled centerline distance transform plot](https://github.com/user-attachments/assets/2c6032af-5902-4d42-8ff8-f50a39fc7103)
 
+![Resampled centerline distance transform 3D visualization](https://github.com/user-attachments/assets/2969b9a5-cf16-485b-aa8d-316da9d6452a)
 
-### 4) Distance transform di cl_nav
+### 4. Distance Transform Along `cl_nav`
 
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/9289b18a-8cd4-4755-bdbb-90440d7e5058" />
-<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/ba2f0925-c921-4aff-b95c-a2575a995997" />
+Distance transform analysis of the final regularized navigation trajectory (`cl_nav`).
 
+![Navigation centerline distance transform plot](https://github.com/user-attachments/assets/9289b18a-8cd4-4755-bdbb-90440d7e5058)
 
+![Navigation centerline distance transform 3D visualization](https://github.com/user-attachments/assets/ba2f0925-c921-4aff-b95c-a2575a995997)
 
-### 5) cl_row + colon
+### 5. Raw Centerline and Colon Model
 
+3D visualization of the raw centerline (`cl_raw`) within the reconstructed colon geometry.
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/f8fd410c-defa-4fb0-99cb-f2baaf803934" />
+![Raw centerline and colon](https://github.com/user-attachments/assets/f8fd410c-defa-4fb0-99cb-f2baaf803934)
 
+### 6. Resampled Centerline and Colon Model
 
-### 6) cl_resampled + colon
+3D visualization of the smoothed and uniformly resampled centerline (`cl_resampled`) within the reconstructed colon geometry.
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/52f3c762-9af2-4864-b965-88f52b4742f5" />
+![Resampled centerline and colon](https://github.com/user-attachments/assets/52f3c762-9af2-4864-b965-88f52b4742f5)
 
+### 7. Navigation Centerline and Colon Model
 
+3D visualization of the final regularized navigation trajectory (`cl_nav`) within the reconstructed colon geometry.
 
-### 7) cl_nav + colon
+![Navigation centerline and colon](https://github.com/user-attachments/assets/67c3236d-ad66-48af-90f3-6a53ef750fac)
 
+### 8. Mesh Registration Overlay
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/67c3236d-ad66-48af-90f3-6a53ef750fac" />
+Visual comparison between the original colon STL model and the registered segmented mesh.
 
+The final alignment is quantitatively evaluated using the ICP RMSE.
 
-### 8) Overlay Mesh
-Confronto visivo tra STL originale e mesh segmentata registrata; l’allineamento finale è valutato con l’RMSE ICP.
+![Mesh registration overlay](https://github.com/user-attachments/assets/f87989d7-0d6a-45cf-ba2b-f4fe407b1124)
 
+### 9. Registered Centerline and Original STL Model
 
+Final visualization of the registered centerline (`cl_stl`) aligned with the original colon STL model.
 
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/f87989d7-0d6a-45cf-ba2b-f4fe407b1124" />
+The resulting trajectory is transformed into the reference STL coordinate system using the registration transformation obtained through ICP.
 
-
-
-### 9) STL + Centerline registrata
-Visualizzazione della traiettoria cl_stl allineata al modello originale, coerente con la registrazione valutata tramite RMSE ICP.
-<img width="700" height="700" alt="image" src="https://github.com/user-attachments/assets/876c48ba-e2fa-42c1-a362-392b4a2c63ec" />
-
+![Registered centerline and original STL](https://github.com/user-attachments/assets/876c48ba-e2fa-42c1-a362-392b4a2c63ec)
 
 
 
